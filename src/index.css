@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased min-h-screen overflow-x-hidden;
+  }
+  
+  #root {
+    @apply min-h-screen w-full flex flex-col m-0 p-0 max-w-none border-none text-left;
+    text-align: left;
+  }
+}
+
+/* Premium micro-interactions & animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-950/20;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-500/20 rounded-full transition-colors duration-200;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-500/50;
+}
