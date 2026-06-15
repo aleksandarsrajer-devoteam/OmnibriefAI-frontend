@@ -46,9 +46,11 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const config = window.APP_CONFIG || {};
+
 // Create Axios HTTP client for API server requests
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api`,
+  baseURL: `${config.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api`,
 });
 
 // Configure Axios interceptors to automatically inject the Bearer ID token for authorization

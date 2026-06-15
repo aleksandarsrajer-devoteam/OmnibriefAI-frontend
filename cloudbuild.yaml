@@ -1,0 +1,55 @@
+steps:
+  # 1. Install Frontend dependencies
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['install']
+
+  # 2. Build Frontend static assets
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['run', 'build']
+
+  # 3. Upload Frontend static files to GCS Bucket (excluding index.html)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gsutil'
+    args:
+      - '-m'
+      - 'rsync'
+      - '-r'
+      - '-d'
+      - '-x'
+      - '^index\.html$'
+      - 'dist'
+      - 'gs://${_FRONTEND_BUCKET}'
+
+  # 4. Generate and Upload config.js (Strategy 2) to GCS Bucket
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        BACKEND_URL=$(gcloud run services describe ${_SERVICE_NAME} --region ${_REGION} --format='value(status.url)')
+        echo "window.APP_CONFIG = {
+          VITE_BACKEND_URL: '$${BACKEND_URL}',
+          VITE_USE_FIREBASE_EMULATOR: 'false',
+          VITE_FIREBASE_API_KEY: 'AIzaSyCgABxwmyDoNTmU5N2WLyZJb55_qktyow0',
+          VITE_FIREBASE_AUTH_DOMAIN: '${_GCP_PROJECT_ID}.firebaseapp.com',
+          VITE_FIREBASE_PROJECT_ID: '${_GCP_PROJECT_ID}',
+          VITE_FIREBASE_STORAGE_BUCKET: '${_GCP_PROJECT_ID}.firebasestorage.app',
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '53494160780',
+          VITE_FIREBASE_APP_ID: '1:53494160780:web:87ae2f5fca3aa4bd3ccaa9'
+        };" > config.js
+        gsutil -h "Cache-Control: no-store, no-cache, must-revalidate" cp config.js gs://${_FRONTEND_BUCKET}/config.js
+
+  # 5. Upload index.html with Cache-Control header to prevent caching
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gsutil'
+    args:
+      - '-h'
+      - 'Cache-Control: no-store, no-cache, must-revalidate'
+      - 'cp'
+      - 'dist/index.html'
+      - 'gs://${_FRONTEND_BUCKET}/index.html'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

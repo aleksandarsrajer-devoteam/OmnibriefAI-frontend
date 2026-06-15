@@ -40,8 +40,8 @@ export const AuthView: React.FC = () => {
       console.error('Firebase Auth Error:', err);
       // Clean user-friendly error messages
       if (
-        err.code === 'auth/user-not-found' || 
-        err.code === 'auth/wrong-password' || 
+        err.code === 'auth/user-not-found' ||
+        err.code === 'auth/wrong-password' ||
         err.code === 'auth/invalid-credential'
       ) {
         setError('Invalid email address or password.');
