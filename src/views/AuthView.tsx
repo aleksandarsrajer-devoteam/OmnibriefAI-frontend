@@ -94,7 +94,7 @@ export const AuthView: React.FC = () => {
             <ShieldCheck className="w-10 h-10 text-brand-400" />
           </div>
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-brand-300 tracking-tight my-0">
-            OmniBrief AI
+            OmniBrief AI MADAFAKA
           </h1>
           <p className="mt-2 text-sm text-slate-400">
             Intelligent PDF & Video Summarization
