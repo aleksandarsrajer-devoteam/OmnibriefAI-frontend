@@ -13,10 +13,50 @@ import {
   XCircle,
 } from 'lucide-react';
 
+const renderMarkdown = (text: string) => {
+  if (!text) return null;
+  // Convert newlines to paragraphs or list items
+  const paragraphs = text.split('\n\n');
+  return paragraphs.map((para, idx) => {
+    const htmlContent = para.trim();
+    if (!htmlContent) return null;
+    
+    // Check if it is a heading: e.g. ### Title or ## Title
+    if (htmlContent.startsWith('### ')) {
+      return <h5 key={idx} className="text-xs font-bold text-slate-200 mt-4 mb-2">{htmlContent.replace('### ', '')}</h5>;
+    }
+    if (htmlContent.startsWith('## ')) {
+      return <h4 key={idx} className="text-sm font-bold text-slate-100 mt-4 mb-2">{htmlContent.replace('## ', '')}</h4>;
+    }
+    if (htmlContent.startsWith('# ')) {
+      return <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2">{htmlContent.replace('# ', '')}</h3>;
+    }
+    
+    // Check if it is a bullet point: e.g. * point or - point
+    if (htmlContent.startsWith('* ') || htmlContent.startsWith('- ')) {
+      const items = htmlContent.split('\n').map(item => item.replace(/^[*-\s]+/, ''));
+      return (
+        <ul key={idx} className="list-disc pl-5 space-y-1.5 text-xs text-slate-300 mb-3">
+          {items.map((item, itemIdx) => {
+            // Basic bold conversion
+            const boldText = item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return <li key={itemIdx} dangerouslySetInnerHTML={{ __html: boldText }} />;
+          })}
+        </ul>
+      );
+    }
+    
+    // Basic bold conversion inside normal paragraph
+    const boldText = htmlContent
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br />');
+    return <p key={idx} className="text-xs text-slate-300 leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: boldText }} />;
+  });
+};
+
 export const SplitScreenView: React.FC = () => {
   const { selectedFile, setView } = useApp();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisDone, setAnalysisDone] = useState(false);
+
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
 
@@ -38,18 +78,7 @@ export const SplitScreenView: React.FC = () => {
 
   const isPdf = selectedFile.type === 'pdf';
 
-  const triggerAnalysis = () => {
-    setIsAnalyzing(true);
-    setAnalysisDone(false);
-    setSelectedAnswer(null);
-    setQuizSubmitted(false);
 
-    // Simulate AI computing
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisDone(true);
-    }, 2000);
-  };
 
   const handleQuizSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,137 +171,69 @@ export const SplitScreenView: React.FC = () => {
         <div className="w-full lg:w-1/2 flex flex-col h-1/2 lg:h-full bg-slate-950">
           
           {/* Action Header */}
-          <div className="px-6 py-3 bg-slate-900/20 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="px-6 py-3 bg-slate-900/20 border-b border-slate-800/80 flex items-center justify-between shrink-0">
             <span className="text-xs text-slate-400 font-medium">Artificial Intelligence Briefing</span>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-              <span className="text-[10px] font-semibold text-brand-400 tracking-wider uppercase">Online Agent</span>
+              <span className={`w-2 h-2 rounded-full ${selectedFile.status === 'Ready' ? 'bg-emerald-500' : 'bg-brand-500 animate-pulse'}`}></span>
+              <span className={`text-[10px] font-semibold tracking-wider uppercase ${selectedFile.status === 'Ready' ? 'text-emerald-400' : 'text-brand-400'}`}>
+                {selectedFile.status === 'Ready' ? 'Analysis Ready' : 'Processing...'}
+              </span>
             </div>
           </div>
 
           {/* AI content viewport */}
           <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
             
-            {/* Generate Action CTA */}
-            <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/40 border border-slate-800/80 rounded-2xl relative overflow-hidden shrink-0">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl pointer-events-none"></div>
-              
-              <div className="p-3 bg-brand-500/10 rounded-xl border border-brand-500/20 text-brand-400 mb-3 shadow-lg shadow-brand-500/5">
-                <Sparkles className="w-6 h-6 animate-pulse" />
-              </div>
-              
-              <h3 className="text-sm font-semibold text-slate-200">
-                AI Knowledge Extraction
-              </h3>
-              <p className="text-xs text-slate-400 max-w-sm mt-1 mb-4">
-                Parse the full file content to construct smart indexes, study highlights, and testing questions.
-              </p>
-
-              <button
-                onClick={triggerAnalysis}
-                disabled={isAnalyzing}
-                className="flex items-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 text-white text-xs font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-brand-600/10 active:scale-[0.98] transition-all"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Analyzing Document...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{analysisDone ? 'Re-generate AI Analysis' : 'Generate AI Analysis'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* SKELETON LOADER STATE */}
-            {isAnalyzing && (
-              <div className="space-y-6 animate-pulse">
-                {/* Skeleton Section 1 */}
-                <div className="space-y-3">
-                  <div className="h-3 bg-slate-800 rounded w-1/4"></div>
-                  <div className="p-4 bg-slate-900/40 border border-slate-800 rounded-xl space-y-2.5">
-                    <div className="h-2.5 bg-slate-800 rounded w-full"></div>
-                    <div className="h-2.5 bg-slate-800 rounded w-11/12"></div>
-                    <div className="h-2.5 bg-slate-800 rounded w-4/5"></div>
-                  </div>
+            {/* 1. LOADING STATE */}
+            {selectedFile.status !== 'Ready' ? (
+              <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-900/10 border border-slate-800/60 rounded-2xl min-h-[300px]">
+                <div className="relative mb-6">
+                  {/* Glowing spinning progress circle */}
+                  <div className="w-16 h-16 rounded-full border-2 border-slate-800 border-t-brand-500 animate-spin"></div>
+                  <div className="absolute inset-0 w-16 h-16 bg-brand-500/10 rounded-full blur-xl animate-pulse"></div>
+                  <Sparkles className="w-6 h-6 text-brand-400 absolute inset-0 m-auto animate-pulse" />
                 </div>
-
-                {/* Skeleton Section 2 */}
-                <div className="space-y-3">
-                  <div className="h-3 bg-slate-800 rounded w-1/3"></div>
-                  <div className="p-4 bg-slate-900/40 border border-slate-800 rounded-xl space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
-                      <div className="h-2.5 bg-slate-800 rounded w-2/3"></div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
-                      <div className="h-2.5 bg-slate-800 rounded w-3/4"></div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 bg-slate-800 rounded-full"></div>
-                      <div className="h-2.5 bg-slate-800 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* RENDER ANALYZED CONTENT */}
-            {analysisDone && !isAnalyzing && (
-              <div className="space-y-6 animate-fade-in">
                 
-                {/* 1. BRIEF SUMMARY */}
+                <h3 className="text-sm font-semibold text-slate-200">
+                  Extracting Knowledge Brief
+                </h3>
+                <p className="text-xs text-slate-400 max-w-sm mt-2 mb-0 leading-relaxed">
+                  Our AI agent is currently reading your GCS file content and generating study summaries, transcripts, and quizzes. This usually takes 10-20 seconds.
+                </p>
+                <div className="mt-6 flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-3 py-1.5 rounded-lg text-[10px] font-mono text-slate-500">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Waiting for Cloud Tasks callback...</span>
+                </div>
+              </div>
+            ) : (
+              /* 2. READY STATE */
+              <div className="space-y-6">
+                
+                {/* BRIEF SUMMARY */}
                 <section className="space-y-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 my-0">
                     <BookOpen className="w-4 h-4" />
                     <span>Executive Summary</span>
                   </h4>
-                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-slate-300 text-xs leading-relaxed">
-                    This file outlines technical operations and product milestones for the OmniBrief AI suite. 
-                    It presents the underlying architecture using vector embeddings to run real-time semantic analysis on files, 
-                    creating local caches for interactive quizzes. The key objectives center around optimizing the parsing speed for large PDF books 
-                    and caching audio tracks in videos to extract sub-second speech transcriptions.
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                    {renderMarkdown(selectedFile.summary || 'No summary text returned by the AI.')}
                   </div>
                 </section>
 
-                {/* 2. KEY HIGHLIGHTS */}
-                <section className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 my-0">
-                    <Layers className="w-4 h-4" />
-                    <span>Key Highlights</span>
-                  </h4>
-                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                      <p className="text-xs text-slate-300 leading-relaxed my-0">
-                        <strong className="text-slate-200 block font-medium">Vector-Based Semantic Parsing</strong>
-                        Ingestion pipeline compiles documents into multi-dimensional coordinates to build search indexation mappings.
-                      </p>
+                {/* TRANSCRIPTION SECTION (Only for videos) */}
+                {selectedFile.type === 'video' && selectedFile.transcription && selectedFile.transcription !== 'N/A' && (
+                  <section className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 my-0">
+                      <Layers className="w-4 h-4" />
+                      <span>Speech Transcription</span>
+                    </h4>
+                    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
+                      {renderMarkdown(selectedFile.transcription)}
                     </div>
+                  </section>
+                )}
 
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                      <p className="text-xs text-slate-300 leading-relaxed my-0">
-                        <strong className="text-slate-200 block font-medium">Synchronized Audio Extraction</strong>
-                        Videos leverage HTML5 audio extractors to run background diarization, identifying distinct speakers on the timeline.
-                      </p>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                      <p className="text-xs text-slate-300 leading-relaxed my-0">
-                        <strong className="text-slate-200 block font-medium">Client-Side State Integrity</strong>
-                        Encapsulated application states allow seamless local operations before synchronizing parameters to the remote server database.
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* 3. INTERACTIVE QUIZ */}
+                {/* INTERACTIVE KNOWLEDGE CHECK */}
                 <section className="space-y-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 my-0">
                     <Award className="w-4 h-4" />
@@ -321,7 +282,7 @@ export const SplitScreenView: React.FC = () => {
                           Submit Answer
                         </button>
                       ) : (
-                        <div className="mt-4 animate-fade-in">
+                        <div className="mt-4">
                           {selectedAnswer === 1 ? (
                             <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs flex items-start gap-2">
                               <CheckCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
@@ -335,7 +296,7 @@ export const SplitScreenView: React.FC = () => {
                               <XCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
                               <div>
                                 <span className="font-semibold block">Incorrect.</span>
-                                The correct answer is: <em>Utilizing multi-dimensional vector embeddings and indexation mapping</em>. Click "Re-generate" above to try again.
+                                The correct answer is: <em>Utilizing multi-dimensional vector embeddings and indexation mapping</em>.
                               </div>
                             </div>
                           )}
@@ -345,14 +306,6 @@ export const SplitScreenView: React.FC = () => {
                   </div>
                 </section>
 
-              </div>
-            )}
-
-            {/* INITIAL BLANK VIEW BEFORE GENERATING ANALYSIS */}
-            {!analysisDone && !isAnalyzing && (
-              <div className="flex flex-col items-center justify-center p-12 border border-slate-900 rounded-2xl text-slate-500 text-xs select-none">
-                <Sparkles className="w-8 h-8 text-slate-800 mb-3" />
-                <span>AI results will compile below. Click "Generate" above to begin.</span>
               </div>
             )}
 

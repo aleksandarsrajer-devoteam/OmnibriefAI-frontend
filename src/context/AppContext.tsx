@@ -24,6 +24,8 @@ export interface FileItem {
   videoUrl?: string;
   rawFile?: File;
   blobUrl?: string;
+  summary?: string;
+  transcription?: string;
 }
 
 interface AppContextType {
@@ -118,6 +120,125 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
+  // Set up Server-Sent Events (SSE) listener for real-time notifications
+  useEffect(() => {
+    if (!user) return;
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: any = null;
+    let reconnectDelay = 1000;
+    const maxReconnectDelay = 30000;
+
+    const connectSSE = async () => {
+      try {
+        if (!auth.currentUser) return;
+
+        // Fetch a fresh identity token from Firebase
+        const token = await auth.currentUser.getIdToken(true);
+        const backendUrl = config.VITE_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const sseUrl = `${backendUrl}/api/notifications/sse?token=${encodeURIComponent(token)}`;
+
+        console.log('[SSE Client] Connecting to:', `${backendUrl}/api/notifications/sse`);
+        eventSource = new EventSource(sseUrl);
+
+        eventSource.onopen = () => {
+          console.log('[SSE Client] Connection successfully opened.');
+          reconnectDelay = 1000; // Reset delay on successful connection
+        };
+
+        eventSource.addEventListener('connected', (e: any) => {
+          console.log('[SSE Client] Connection handshake response:', e.data);
+        });
+
+        eventSource.addEventListener('file-created', (e: any) => {
+          try {
+            const fileDoc = JSON.parse(e.data);
+            console.log('[SSE Client] Received file-created event payload:', fileDoc);
+
+            setFiles((prev) => {
+              const exists = prev.some((f) => f.id === fileDoc.id);
+              const uploadDate = fileDoc.createdAt
+                ? new Date(fileDoc.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric',
+                  })
+                : 'Unknown Date';
+              const type = fileDoc.fileName?.endsWith('.pdf') ? 'pdf' : 'video';
+              const status: FileStatus = fileDoc.status === 'ready' ? 'Ready' : 'Processing';
+
+              const mappedFile: FileItem = {
+                id: fileDoc.id,
+                name: fileDoc.fileName || 'Unnamed File',
+                uploadDate,
+                type,
+                status,
+                videoUrl: fileDoc.url,
+                blobUrl: fileDoc.url,
+                summary: fileDoc.summary,
+                transcription: fileDoc.transcription,
+              };
+
+              if (exists) {
+                return prev.map((f) => (f.id === fileDoc.id ? mappedFile : f));
+              } else {
+                return [mappedFile, ...prev];
+              }
+            });
+
+            // Update selectedFile if the active viewer file matches the completed file
+            setSelectedFile((prev) => {
+              if (prev && prev.id === fileDoc.id) {
+                const status: FileStatus = fileDoc.status === 'ready' ? 'Ready' : 'Processing';
+
+                return {
+                  ...prev,
+                  status,
+                  videoUrl: fileDoc.url,
+                  blobUrl: fileDoc.url,
+                  summary: fileDoc.summary,
+                  transcription: fileDoc.transcription,
+                };
+              }
+              return prev;
+            });
+          } catch (err) {
+            console.error('[SSE Client] Error parsing event message payload:', err);
+          }
+        });
+
+        eventSource.onerror = (err) => {
+          console.error('[SSE Client] Stream connection encountered an error:', err);
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+
+          // Trigger exponential backoff reconnection
+          reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay);
+          console.log(`[SSE Client] Reconnecting in ${reconnectDelay}ms...`);
+          reconnectTimeout = setTimeout(connectSSE, reconnectDelay);
+        };
+      } catch (err) {
+        console.error('[SSE Client] Initial connection flow failed:', err);
+        reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay);
+        reconnectTimeout = setTimeout(connectSSE, reconnectDelay);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      console.log('[SSE Client] Closing event stream listener.');
+      if (eventSource) {
+        eventSource.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, [user]);
+
   // Custom setView wrapper that updates react state and pushes browser history
   const handleSetView = (view: ViewType) => {
     setView(view);
@@ -149,6 +270,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           status,
           videoUrl: file.url,
           blobUrl: file.url,
+          summary: file.summary,
+          transcription: file.transcription,
         };
       });
       setFiles(mappedFiles);
@@ -198,7 +321,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
 
       const { uploadUrl, fileId } = response.data;
-      console.log('[Upload Flow] Received signed upload URL from backend:', uploadUrl);
+      console.log('[Upload Flow] Received signed upload URL from backend for file:', fileId);
 
       // Wrap file in a typed Blob to prevent browser from overriding Content-Type to application/octet-stream
       const blobToUpload = new Blob([file], { type: determinedContentType });
@@ -218,11 +341,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         },
       });
 
-      // 3. Notify backend of completion to change file status in Firestore
-      await api.post(`/files/${fileId}/complete`);
-
-      // Refresh list to display newly uploaded file
-      await fetchFiles();
+      // Direct GCS upload completed. We no longer hit the backend endpoint /complete.
+      // The GCS Eventarc trigger + Workflow calls POST /api/files/create and pushes the event via SSE.
+      console.log('[Upload Flow] Direct upload completed. SSE will handle real-time file insertion.');
     } catch (error) {
       console.error('Error during direct GCS file upload flow:', error);
       throw error;

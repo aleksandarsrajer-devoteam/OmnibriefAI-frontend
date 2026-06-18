@@ -19,7 +19,7 @@ const AppContent: React.FC = () => {
       return <AuthView />;
   }
 };
-
+//Test
 function App() {
   return (
     <AppProvider>
