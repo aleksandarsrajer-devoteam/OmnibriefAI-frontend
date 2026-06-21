@@ -332,6 +332,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { uploadUrl, fileId } = response.data;
       console.log('[Upload Flow] Received signed upload URL from backend for file:', fileId);
 
+      // Add the file to local list state as Pending immediately to update the UI without waiting for SSE/refresh
+      const newPendingFile: FileItem = {
+        id: fileId,
+        name: file.name,
+        uploadDate: new Date().toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric',
+        }),
+        type: fileType,
+        status: 'Pending',
+      };
+      setFiles((prev) => [newPendingFile, ...prev]);
+
       // Wrap file in a typed Blob to prevent browser from overriding Content-Type to application/octet-stream
       const blobToUpload = new Blob([file], { type: determinedContentType });
 
