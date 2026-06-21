@@ -332,20 +332,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { uploadUrl, fileId } = response.data;
       console.log('[Upload Flow] Received signed upload URL from backend for file:', fileId);
 
-      // Add the file to local list state as Pending immediately to update the UI without waiting for SSE/refresh
-      const newPendingFile: FileItem = {
-        id: fileId,
-        name: file.name,
-        uploadDate: new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-        }),
-        type: fileType,
-        status: 'Pending',
-      };
-      setFiles((prev) => [newPendingFile, ...prev]);
-
       // Wrap file in a typed Blob to prevent browser from overriding Content-Type to application/octet-stream
       const blobToUpload = new Blob([file], { type: determinedContentType });
 
@@ -364,9 +350,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         },
       });
 
-      // Direct GCS upload completed. We no longer hit the backend endpoint /complete.
-      // The GCS Eventarc trigger + Workflow calls POST /api/files/create and pushes the event via SSE.
-      console.log('[Upload Flow] Direct upload completed. SSE will handle real-time file insertion.');
+      // Direct GCS upload completed. Fetch latest files list from backend to show the new pending file in the UI.
+      console.log('[Upload Flow] Direct GCS upload completed. Fetching file list...');
+      await fetchFiles();
     } catch (error) {
       console.error('Error during direct GCS file upload flow:', error);
       throw error;
