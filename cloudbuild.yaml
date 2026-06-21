@@ -28,7 +28,7 @@ steps:
     args:
       - '-c'
       - |
-        BACKEND_URL=$(gcloud run services describe ${_SERVICE_NAME} --region ${_REGION} --format='value(status.url)')
+        BACKEND_URL="https://${_CUSTOM_DOMAIN}"
         echo "window.APP_CONFIG = {
           VITE_BACKEND_URL: '$${BACKEND_URL}',
           VITE_USE_FIREBASE_EMULATOR: 'false',

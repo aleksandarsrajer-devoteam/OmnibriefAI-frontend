@@ -13,10 +13,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig); // Registers your specific client application with Firebase SDK, reads credentials(your API key, Project ID...)
 
 // Initialize Firebase Auth
-const auth = getAuth(app);
+const auth = getAuth(app); // Auth layer, keeps track of whether a user is logged in, manages session tokens and browser storage..
 
 // Conditionally connect to Firebase Auth Emulator
 const useEmulator = config.VITE_USE_FIREBASE_EMULATOR !== undefined
@@ -30,9 +30,9 @@ if (useEmulator) {
 }
 
 // Initialize Google Auth Provider
-const googleProvider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider(); // Tells firebase you want to use Google OAuth for SSO
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account' // always shows the Google sign-in pop-up, asking user to choose which Google account they want to use. 
 });
 
 export { auth, googleProvider };
