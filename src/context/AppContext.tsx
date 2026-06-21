@@ -13,7 +13,7 @@ import axios from 'axios';
 
 export type ViewType = 'auth' | 'dashboard' | 'split-screen-viewer';
 export type FileType = 'pdf' | 'video';
-export type FileStatus = 'Processing' | 'Ready';
+export type FileStatus = 'Pending' | 'Processing' | 'Ready' | 'Failed';
 
 export interface FileItem {
   id: string;
@@ -165,7 +165,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                   })
                 : 'Unknown Date';
               const type = fileDoc.fileName?.endsWith('.pdf') ? 'pdf' : 'video';
-              const status: FileStatus = fileDoc.status === 'ready' ? 'Ready' : 'Processing';
+              const status: FileStatus =
+                fileDoc.status === 'ready' ? 'Ready' :
+                fileDoc.status === 'processing' ? 'Processing' :
+                fileDoc.status === 'failed' ? 'Failed' : 'Pending';
 
               const mappedFile: FileItem = {
                 id: fileDoc.id,
@@ -189,7 +192,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             // Update selectedFile if the active viewer file matches the completed file
             setSelectedFile((prev) => {
               if (prev && prev.id === fileDoc.id) {
-                const status: FileStatus = fileDoc.status === 'ready' ? 'Ready' : 'Processing';
+                const status: FileStatus =
+                  fileDoc.status === 'ready' ? 'Ready' :
+                  fileDoc.status === 'processing' ? 'Processing' :
+                  fileDoc.status === 'failed' ? 'Failed' : 'Pending';
 
                 return {
                   ...prev,
@@ -260,7 +266,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           : 'Unknown Date';
         const type = file.fileName?.endsWith('.pdf') ? 'pdf' : 'video';
         // Map database status string to display statuses
-        const status: FileStatus = file.status === 'ready' ? 'Ready' : 'Processing';
+        const status: FileStatus =
+          file.status === 'ready' ? 'Ready' :
+          file.status === 'processing' ? 'Processing' :
+          file.status === 'failed' ? 'Failed' : 'Pending';
 
         return {
           id: file.id,

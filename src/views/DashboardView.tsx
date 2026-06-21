@@ -267,6 +267,8 @@ export const DashboardView: React.FC = () => {
                   {files.map((file) => {
                     const isPdf = file.type === 'pdf';
                     const isReady = file.status === 'Ready';
+                    const isFailed = file.status === 'Failed';
+                    const isPendingOrProcessing = file.status === 'Pending' || file.status === 'Processing';
 
                     return (
                       <div
@@ -288,9 +290,11 @@ export const DashboardView: React.FC = () => {
                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border uppercase ${
                               isReady
                                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                : isFailed
+                                  ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                             }`}>
-                              {!isReady && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>}
+                              {isPendingOrProcessing && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>}
                               {file.status}
                             </span>
                           </div>

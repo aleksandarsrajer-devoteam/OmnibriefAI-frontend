@@ -174,9 +174,25 @@ export const SplitScreenView: React.FC = () => {
           <div className="px-6 py-3 bg-slate-900/20 border-b border-slate-800/80 flex items-center justify-between shrink-0">
             <span className="text-xs text-slate-400 font-medium">Artificial Intelligence Briefing</span>
             <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${selectedFile.status === 'Ready' ? 'bg-emerald-500' : 'bg-brand-500 animate-pulse'}`}></span>
-              <span className={`text-[10px] font-semibold tracking-wider uppercase ${selectedFile.status === 'Ready' ? 'text-emerald-400' : 'text-brand-400'}`}>
-                {selectedFile.status === 'Ready' ? 'Analysis Ready' : 'Processing...'}
+              <span className={`w-2 h-2 rounded-full ${
+                selectedFile.status === 'Ready'
+                  ? 'bg-emerald-500'
+                  : selectedFile.status === 'Failed'
+                    ? 'bg-rose-500'
+                    : 'bg-brand-500 animate-pulse'
+              }`}></span>
+              <span className={`text-[10px] font-semibold tracking-wider uppercase ${
+                selectedFile.status === 'Ready'
+                  ? 'text-emerald-400'
+                  : selectedFile.status === 'Failed'
+                    ? 'text-rose-400'
+                    : 'text-brand-400'
+              }`}>
+                {selectedFile.status === 'Ready'
+                  ? 'Analysis Ready'
+                  : selectedFile.status === 'Failed'
+                    ? 'Analysis Failed'
+                    : 'Processing...'}
               </span>
             </div>
           </div>
@@ -184,27 +200,43 @@ export const SplitScreenView: React.FC = () => {
           {/* AI content viewport */}
           <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
             
-            {/* 1. LOADING STATE */}
+            {/* 1. LOADING & FAILED STATES */}
             {selectedFile.status !== 'Ready' ? (
-              <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-900/10 border border-slate-800/60 rounded-2xl min-h-[300px]">
-                <div className="relative mb-6">
-                  {/* Glowing spinning progress circle */}
-                  <div className="w-16 h-16 rounded-full border-2 border-slate-800 border-t-brand-500 animate-spin"></div>
-                  <div className="absolute inset-0 w-16 h-16 bg-brand-500/10 rounded-full blur-xl animate-pulse"></div>
-                  <Sparkles className="w-6 h-6 text-brand-400 absolute inset-0 m-auto animate-pulse" />
+              selectedFile.status === 'Failed' ? (
+                <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-900/10 border border-rose-950/20 rounded-2xl min-h-[300px]">
+                  <div className="relative mb-6">
+                    <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
+                      <XCircle className="w-8 h-8 text-rose-500" />
+                    </div>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-200">
+                    AI Briefing Generation Failed
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-sm mt-2 mb-0 leading-relaxed">
+                    The processing worker encountered an error while analyzing this file. Please check if the file is valid and try uploading it again.
+                  </p>
                 </div>
-                
-                <h3 className="text-sm font-semibold text-slate-200">
-                  Extracting Knowledge Brief
-                </h3>
-                <p className="text-xs text-slate-400 max-w-sm mt-2 mb-0 leading-relaxed">
-                  Our AI agent is currently reading your GCS file content and generating study summaries, transcripts, and quizzes. This usually takes 10-20 seconds.
-                </p>
-                <div className="mt-6 flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-3 py-1.5 rounded-lg text-[10px] font-mono text-slate-500">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Waiting for Cloud Tasks callback...</span>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-900/10 border border-slate-800/60 rounded-2xl min-h-[300px]">
+                  <div className="relative mb-6">
+                    {/* Glowing spinning progress circle */}
+                    <div className="w-16 h-16 rounded-full border-2 border-slate-800 border-t-brand-500 animate-spin"></div>
+                    <div className="absolute inset-0 w-16 h-16 bg-brand-500/10 rounded-full blur-xl animate-pulse"></div>
+                    <Sparkles className="w-6 h-6 text-brand-400 absolute inset-0 m-auto animate-pulse" />
+                  </div>
+                  
+                  <h3 className="text-sm font-semibold text-slate-200">
+                    Extracting Knowledge Brief
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-sm mt-2 mb-0 leading-relaxed">
+                    Our AI agent is currently reading your GCS file content and generating study summaries, transcripts, and quizzes. This usually takes 10-20 seconds.
+                  </p>
+                  <div className="mt-6 flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-3 py-1.5 rounded-lg text-[10px] font-mono text-slate-500">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Waiting for Cloud Tasks callback...</span>
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               /* 2. READY STATE */
               <div className="space-y-6">
