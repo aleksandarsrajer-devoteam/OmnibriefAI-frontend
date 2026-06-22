@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import {
   ArrowLeft,
   FileText,
   Video,
   Sparkles,
-  Award,
   Layers,
   RefreshCw,
   BookOpen,
-  CheckCircle,
   XCircle,
 } from 'lucide-react';
 
@@ -57,10 +55,6 @@ const renderMarkdown = (text: string) => {
 export const SplitScreenView: React.FC = () => {
   const { selectedFile, setView } = useApp();
 
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-
-
   // If no file is selected, fallback to dashboard
   if (!selectedFile) {
     return (
@@ -77,15 +71,6 @@ export const SplitScreenView: React.FC = () => {
   }
 
   const isPdf = selectedFile.type === 'pdf';
-
-
-
-  const handleQuizSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedAnswer !== null) {
-      setQuizSubmitted(true);
-    }
-  };
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col overflow-hidden text-slate-100 font-sans">
@@ -265,78 +250,7 @@ export const SplitScreenView: React.FC = () => {
                   </section>
                 )}
 
-                {/* INTERACTIVE KNOWLEDGE CHECK */}
-                <section className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 my-0">
-                    <Award className="w-4 h-4" />
-                    <span>Knowledge Check</span>
-                  </h4>
-                  
-                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 font-semibold block mb-2">Question 1 of 1</span>
-                    <p className="text-xs font-medium text-slate-200 mb-4 my-0">
-                      What is the primary method OmniBrief AI uses to enable real-time semantic search and questions inside documents?
-                    </p>
 
-                    <form onSubmit={handleQuizSubmit} className="space-y-2.5">
-                      {[
-                        'Creating a full server-side copy of the file database',
-                        'Utilizing multi-dimensional vector embeddings and indexation mapping',
-                        'Extracting screenshots of text using optical characters',
-                      ].map((option, idx) => (
-                        <label
-                          key={idx}
-                          className={`flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-all ${
-                            selectedAnswer === idx
-                              ? 'bg-brand-500/10 border-brand-500 text-slate-200'
-                              : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-900/60 hover:text-slate-300'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="quiz-q1"
-                            checked={selectedAnswer === idx}
-                            onChange={() => !quizSubmitted && setSelectedAnswer(idx)}
-                            disabled={quizSubmitted}
-                            className="mt-0.5 text-brand-500 focus:ring-brand-500 border-slate-800 bg-slate-950"
-                          />
-                          <span className="leading-tight">{option}</span>
-                        </label>
-                      ))}
-
-                      {/* Submit controls */}
-                      {!quizSubmitted ? (
-                        <button
-                          type="submit"
-                          disabled={selectedAnswer === null}
-                          className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-slate-200 text-xs font-semibold py-2.5 rounded-xl transition-all mt-4"
-                        >
-                          Submit Answer
-                        </button>
-                      ) : (
-                        <div className="mt-4">
-                          {selectedAnswer === 1 ? (
-                            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs flex items-start gap-2">
-                              <CheckCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
-                              <div>
-                                <span className="font-semibold block">Correct!</span>
-                                Semantic parsing maps the document layout into vector databases for rapid index query lookups.
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs flex items-start gap-2">
-                              <XCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
-                              <div>
-                                <span className="font-semibold block">Incorrect.</span>
-                                The correct answer is: <em>Utilizing multi-dimensional vector embeddings and indexation mapping</em>.
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                </section>
 
               </div>
             )}

@@ -183,7 +183,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               };
 
               if (exists) {
-                return prev.map((f) => (f.id === fileDoc.id ? mappedFile : f));
+                return prev.map((f) => {
+                  if (f.id === fileDoc.id) {
+                    return {
+                      ...f,
+                      status,
+                      summary: fileDoc.summary || f.summary,
+                      transcription: fileDoc.transcription || f.transcription,
+                      videoUrl: fileDoc.url || f.videoUrl,
+                      blobUrl: fileDoc.url || f.blobUrl,
+                    };
+                  }
+                  return f;
+                });
               } else {
                 return [mappedFile, ...prev];
               }
@@ -200,10 +212,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return {
                   ...prev,
                   status,
-                  videoUrl: fileDoc.url,
-                  blobUrl: fileDoc.url,
-                  summary: fileDoc.summary,
-                  transcription: fileDoc.transcription,
+                  videoUrl: fileDoc.url || prev.videoUrl,
+                  blobUrl: fileDoc.url || prev.blobUrl,
+                  summary: fileDoc.summary || prev.summary,
+                  transcription: fileDoc.transcription || prev.transcription,
                 };
               }
               return prev;
